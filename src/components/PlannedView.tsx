@@ -42,6 +42,9 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
     return [...posts]
       .filter(p => p.status !== 'posted')
       .sort((a, b) => {
+        // Locked posts always float to the top
+        if (a.locked && !b.locked) return -1;
+        if (!a.locked && b.locked) return 1;
         const ao = a.planOrder ?? 999999;
         const bo = b.planOrder ?? 999999;
         if (ao !== bo) return ao - bo;
