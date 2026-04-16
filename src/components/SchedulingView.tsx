@@ -899,6 +899,8 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
     // Build new entry order
     const draggedEntry = entries.find(e => e.key === dragKey);
     if (!draggedEntry) { endDrag(); return; }
+    // Don't drag locked entries
+    if (draggedEntry.posts.some(p => p.locked)) { endDrag(); return; }
     const remaining = entries.filter(e => e.key !== dragKey);
     const targetId = target.startsWith('after:') ? target.slice(6) : target;
     const targetIdx = remaining.findIndex(e => e.key === targetId);
@@ -951,6 +953,7 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
         {entries.map(({ key, posts: groupPosts }, idx) => {
           const firstPost   = groupPosts[0];
           const isCarousel  = groupPosts.length > 1;
+          const isLocked    = groupPosts.some(p => p.locked);
           const isDragging  = dragKey === key;
           const insertBefore = insertBeforeKey === key && !isDragging;
           const insertAfter  = insertBeforeKey === `after:${key}` && !isDragging;
@@ -962,15 +965,15 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
               {insertAfter  && <div style={{ position: 'absolute', right: -3, top: 0, bottom: 0, width: 4, background: C.acc, zIndex: 20, boxShadow: `0 0 8px ${C.acc}` }} />}
 
               <div
-                draggable
-                onDragStart={e => startDrag(e, key)}
+                draggable={!isLocked}
+                onDragStart={isLocked ? undefined : e => startDrag(e, key)}
                 onDragEnd={endDrag}
                 onDragOver={e => handleDragOver(e, key)}
                 onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setInsertBeforeKey(null); }}
                 onDrop={e => handleDrop(e, key)}
                 onMouseEnter={() => setHoverKey(key)}
                 onMouseLeave={() => setHoverKey(null)}
-                style={{ aspectRatio: '1', overflow: 'hidden', position: 'relative', cursor: dragKey ? 'grabbing' : 'grab', background: C.bg, opacity: isDragging ? 0.25 : 1, transition: 'opacity 0.15s' }}
+                style={{ aspectRatio: '1', overflow: 'hidden', position: 'relative', cursor: isLocked ? 'default' : dragKey ? 'grabbing' : 'grab', background: C.bg, opacity: isDragging ? 0.25 : 1, transition: 'opacity 0.15s', outline: isLocked ? '2px solid #F59E0B' : 'none', outlineOffset: '-2px' }}
               >
                 {firstPost.image ? (
                   <img src={firstPost.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
@@ -987,6 +990,13 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
 
                 {/* Status dot */}
                 <div style={{ position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: '50%', background: STATUS_COLOR[firstPost.status], border: '1.5px solid rgba(255,255,255,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+
+                {/* Lock badge — always visible when locked */}
+                {isLocked && (
+                  <div style={{ position: 'absolute', bottom: 6, left: 6, background: '#F59E0B', borderRadius: 5, padding: '2px 4px', lineHeight: 0, zIndex: 5 }}>
+                    <Lock size={10} color="#fff" />
+                  </div>
+                )}
 
                 {/* Carousel icon (top-right corner, Instagram style) */}
                 {isCarousel && (
@@ -1008,10 +1018,18 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
                 {isHovered && !isDragging && (
                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.58)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                     onClick={() => setEditKey(editKey === key ? null : key)}>
-                    <GripVertical size={18} color="#fff" />
+                    {!isLocked && <GripVertical size={18} color="#fff" />}
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                       {new Date(firstPost.scheduledDate).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
                     </span>
+                    {/* Lock toggle in hover overlay */}
+                    <button
+                      onClick={e => { e.stopPropagation(); groupPosts.forEach(p => onUpdatePost({ ...p, locked: !isLocked })); }}
+                      style={{ marginTop: 2, background: isLocked ? '#F59E0B' : 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: '#fff', fontSize: 10, fontWeight: 600 }}
+                    >
+                      {isLocked ? <Lock size={10} color="#fff" /> : <Unlock size={10} color="#fff" />}
+                      {isLocked ? 'Unlock' : 'Lock'}
+                    </button>
                     {isCarousel && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)' }}>{groupPosts.length} images</span>}
                   </div>
                 )}
