@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Social Media Content Manager (Vite)",
+      "runtimeExecutable": "/Users/curtismatthews/.nvm/versions/node/v20.20.2/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--port", "3001"],
+      "port": 3001
+    }
+  ]
+}
