@@ -830,6 +830,7 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
   const [hoverKey, setHoverKey]         = useState<string | null>(null);
   const [editKey, setEditKey]           = useState<string | null>(null);
   const dragNode = useRef<HTMLDivElement | null>(null);
+  const lastInsertRef = useRef<string | null>(null);
 
   // Collapse carousel posts into single entries
   const entries = useMemo(() => {
@@ -850,33 +851,41 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
 
   function startDrag(e: React.DragEvent, key: string) {
     dragNode.current = e.currentTarget as HTMLDivElement;
+    lastInsertRef.current = null;
     setDragKey(key);
+    setInsertBeforeKey(null);
     e.dataTransfer.effectAllowed = 'move';
     setTimeout(() => { if (dragNode.current) dragNode.current.style.opacity = '0.25'; }, 0);
   }
   function endDrag() {
     if (dragNode.current) dragNode.current.style.opacity = '1';
-    dragNode.current = null; setDragKey(null); setInsertBeforeKey(null);
+    dragNode.current = null;
+    lastInsertRef.current = null;
+    setDragKey(null);
+    setInsertBeforeKey(null);
   }
   function handleDragOver(e: React.DragEvent, key: string) {
     e.preventDefault();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setInsertBeforeKey(e.clientX < rect.left + rect.width / 2 ? key : `after:${key}`);
+    const target = e.clientX < rect.left + rect.width / 2 ? key : `after:${key}`;
+    setInsertBeforeKey(target);
+    lastInsertRef.current = target;
   }
   function handleDrop(e: React.DragEvent, targetKey: string) {
     e.preventDefault();
-    if (!dragKey || dragKey === targetKey) { endDrag(); return; }
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const target = e.clientX < rect.left + rect.width / 2 ? targetKey : `after:${targetKey}`;
+    const resolvedInsert = insertBeforeKey ?? lastInsertRef.current;
+    const resolvedKey = resolvedInsert?.startsWith('after:') ? resolvedInsert.slice(6) : resolvedInsert;
+    if (!dragKey || resolvedKey === dragKey) { endDrag(); return; }
+    const target = resolvedInsert ?? (e.clientX < (e.currentTarget as HTMLElement).getBoundingClientRect().left + (e.currentTarget as HTMLElement).getBoundingClientRect().width / 2 ? targetKey : `after:${targetKey}`);
 
     // Build new entry order
     const draggedEntry = entries.find(e => e.key === dragKey);
     if (!draggedEntry) { endDrag(); return; }
     const remaining = entries.filter(e => e.key !== dragKey);
-    let insertAt = target.startsWith('after:')
-      ? (remaining.findIndex(e => e.key === target.slice(6)) + 1) || remaining.length
-      : Math.max(0, remaining.findIndex(e => e.key === target));
-    if (!target.startsWith('after:') && remaining.findIndex(e => e.key === target) === -1) insertAt = remaining.length;
+    const targetId = target.startsWith('after:') ? target.slice(6) : target;
+    const targetIdx = remaining.findIndex(e => e.key === targetId);
+    if (targetIdx === -1) { endDrag(); return; }
+    let insertAt = target.startsWith('after:') ? targetIdx + 1 : targetIdx;
     const newOrder = [...remaining];
     newOrder.splice(insertAt, 0, draggedEntry);
 
@@ -884,9 +893,12 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
     const entryDates = entries.map(entry =>
       entry.posts.reduce((min, p) => p.scheduledDate < min ? p.scheduledDate : min, entry.posts[0].scheduledDate)
     );
+    // If dates aren't all unique add ms offsets so the sort has a stable tiebreaker
+    const dateMs = entryDates.map(d => d.getTime());
+    const allUnique = new Set(dateMs).size === dateMs.length;
     // Reassign dates in new order
     newOrder.forEach((entry, i) => {
-      const newDate = entryDates[i];
+      const newDate = allUnique ? entryDates[i] : new Date(entryDates[i].getTime() + i);
       entry.posts.forEach(post => {
         if (post.scheduledDate.getTime() !== newDate.getTime()) onUpdatePost({ ...post, scheduledDate: newDate });
       });
