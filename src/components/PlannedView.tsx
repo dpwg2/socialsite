@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Post } from '../App';
 import { C } from '../utils/ds';
 import {
@@ -44,6 +44,15 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const dragNode = useRef<HTMLDivElement | null>(null);
   const lastInsertRef = useRef<string | null>(null);
+
+  // Seed planOrder for any posts that don't have one yet
+  useEffect(() => {
+    const unseeded = entries.filter(e => e.posts.some(p => p.planOrder === undefined));
+    if (unseeded.length === 0) return;
+    entries.forEach((e, i) => {
+      e.posts.forEach(p => { if (p.planOrder === undefined) onUpdatePost({ ...p, planOrder: i * 1000 }); });
+    });
+  }, []); // only on mount
 
   // Collapse into carousel-aware entries, sort locked first then by planOrder
   const entries = useMemo<Entry[]>(() => {
@@ -93,8 +102,11 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
     const idx = target.startsWith('after:') ? targetIdx + 1 : targetIdx;
     const newOrder = [...remaining];
     newOrder.splice(idx, 0, draggedEntry);
+    // Assign planOrder to ALL entries so order is always deterministic
     newOrder.forEach((e, i) => {
-      if (!entryLocked(e)) e.posts.forEach(p => onUpdatePost({ ...p, planOrder: i * 1000 }));
+      e.posts.forEach(p => {
+        if ((p.planOrder ?? -1) !== i * 1000) onUpdatePost({ ...p, planOrder: i * 1000 });
+      });
     });
     endDrag();
   }
