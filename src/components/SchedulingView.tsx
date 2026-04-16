@@ -228,7 +228,7 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
   }
 
   const visible = useMemo(() => {
-    let list = [...posts];
+    let list = [...posts].filter(p => p.locked); // only locked posts belong in scheduling
     if (selectedFolderId !== null) {
       list = list.filter(p => p.folderId === selectedFolderId);
     } else {
@@ -326,7 +326,7 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: C.t1, margin: 0 }}>Scheduling</h2>
           <p style={{ fontSize: 13, color: C.t2, marginTop: 3, marginBottom: 0 }}>
-            {visible.length} {selectedFolderId ? `in folder` : 'unfiled'} · {posts.length} total posts
+            {visible.length} {selectedFolderId ? `in folder` : 'locked'} · {posts.filter(p => p.locked).length} total locked
           </p>
         </div>
 
