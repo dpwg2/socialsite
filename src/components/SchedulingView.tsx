@@ -290,27 +290,18 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
     });
     const draggedEntry = allEntries.find(e => e.key === dragId);
     if (!draggedEntry) { handleDragEnd(); return; }
-    // Don't allow dragging a locked entry
-    if (draggedEntry.posts.some(p => p.locked)) { handleDragEnd(); return; }
     const remaining = allEntries.filter(e => e.key !== dragId);
     const targetIdx = remaining.findIndex(e => e.key === resolvedKey);
-    // If target not found, bail rather than silently appending to end
     if (targetIdx === -1) { handleDragEnd(); return; }
-    // Don't allow dropping adjacent to a locked entry
-    const targetEntry = remaining[targetIdx];
-    if (targetEntry.posts.some(p => p.locked)) { handleDragEnd(); return; }
     const insertAt = targetKey.startsWith('after:') ? targetIdx + 1 : targetIdx;
     const newOrder = [...remaining];
     newOrder.splice(insertAt, 0, draggedEntry);
     const entryDates = allEntries.map(e =>
       e.posts.reduce((min, p) => p.scheduledDate < min ? p.scheduledDate : min, e.posts[0].scheduledDate)
     );
-    // If dates aren't all unique, add sub-millisecond offsets so the sort has a stable tiebreaker.
     const dateMs = entryDates.map(d => d.getTime());
     const allUnique = new Set(dateMs).size === dateMs.length;
     newOrder.forEach((entry, i) => {
-      // Skip locked entries — they keep their current dates
-      if (entry.posts.some(p => p.locked)) return;
       const newDate = allUnique ? entryDates[i] : new Date(entryDates[i].getTime() + i);
       entry.posts.forEach(post => {
         if (post.scheduledDate.getTime() !== newDate.getTime()) onUpdatePost({ ...post, scheduledDate: newDate });
@@ -508,8 +499,8 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
 
               {/* Main card */}
               <div
-                draggable={!selecting && !isLocked}
-                onDragStart={selecting || isLocked ? undefined : e => handleDragStart(e, key, e.currentTarget as HTMLDivElement)}
+                draggable={!selecting}
+                onDragStart={selecting ? undefined : e => handleDragStart(e, key, e.currentTarget as HTMLDivElement)}
                 onDragEnd={handleDragEnd}
                 onDragOver={selecting ? undefined : e => handleDragOver(e, key)}
                 onDragLeave={selecting ? undefined : handleDragLeave}
@@ -523,7 +514,7 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
                   border: isLocked ? `2px solid #F59E0B` : isSelected ? `2px solid ${C.acc}` : isCarousel ? `2px solid #10B981` : `1px solid ${C.line}`,
                   boxShadow: isLocked ? '0 2px 6px rgba(245,158,11,0.2)' : isSelected ? `0 0 0 3px ${C.acc}33` : isDragging ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
                   display: 'flex', flexDirection: 'column',
-                  cursor: selecting ? 'pointer' : isLocked ? 'default' : dragId ? 'grabbing' : 'grab',
+                  cursor: selecting ? 'pointer' : dragId ? 'grabbing' : 'grab',
                   transition: 'opacity 0.15s',
                   opacity: isDragging ? 0.3 : 1,
                 }}
