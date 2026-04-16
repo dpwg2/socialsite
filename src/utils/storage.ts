@@ -80,6 +80,7 @@ function postToRow(p: Post) {
     saves:          p.saves ?? null,
     carousel_id:    p.carouselId ?? null,
     folder_id:      p.folderId ?? null,
+    locked:         p.locked ?? false,
   };
 }
 
@@ -101,6 +102,7 @@ function rowToPost(row: Record<string, unknown>): Post {
     saves:         (row.saves as number) ?? undefined,
     carouselId:    (row.carousel_id as string) ?? undefined,
     folderId:      (row.folder_id as string) ?? undefined,
+    locked:        (row.locked as boolean) ?? false,
   };
 }
 

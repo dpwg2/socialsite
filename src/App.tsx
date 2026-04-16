@@ -41,6 +41,8 @@ export interface Post {
   carouselId?: string;
   // Folder organisation
   folderId?: string;
+  // Lock — prevents drag reorder
+  locked?: boolean;
 }
 
 export interface Folder {

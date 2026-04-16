@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Post, Folder } from '../App';
 import { C } from '../utils/ds';
-import { Instagram, Facebook, Twitter, Linkedin, Calendar, ArrowUpDown, Link, Unlink, Layers, GripVertical, LayoutGrid, List, FolderOpen, FolderPlus, X, Check } from 'lucide-react';
+import { Instagram, Facebook, Twitter, Linkedin, Calendar, ArrowUpDown, Link, Unlink, Layers, GripVertical, LayoutGrid, List, FolderOpen, FolderPlus, X, Check, Lock, Unlock } from 'lucide-react';
 
 interface Props {
   posts: Post[];
@@ -290,10 +290,15 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
     });
     const draggedEntry = allEntries.find(e => e.key === dragId);
     if (!draggedEntry) { handleDragEnd(); return; }
+    // Don't allow dragging a locked entry
+    if (draggedEntry.posts.some(p => p.locked)) { handleDragEnd(); return; }
     const remaining = allEntries.filter(e => e.key !== dragId);
     const targetIdx = remaining.findIndex(e => e.key === resolvedKey);
     // If target not found, bail rather than silently appending to end
     if (targetIdx === -1) { handleDragEnd(); return; }
+    // Don't allow dropping adjacent to a locked entry
+    const targetEntry = remaining[targetIdx];
+    if (targetEntry.posts.some(p => p.locked)) { handleDragEnd(); return; }
     const insertAt = targetKey.startsWith('after:') ? targetIdx + 1 : targetIdx;
     const newOrder = [...remaining];
     newOrder.splice(insertAt, 0, draggedEntry);
@@ -301,10 +306,11 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
       e.posts.reduce((min, p) => p.scheduledDate < min ? p.scheduledDate : min, e.posts[0].scheduledDate)
     );
     // If dates aren't all unique, add sub-millisecond offsets so the sort has a stable tiebreaker.
-    // The offset is invisible to users (datetime-local only shows to the minute).
     const dateMs = entryDates.map(d => d.getTime());
     const allUnique = new Set(dateMs).size === dateMs.length;
     newOrder.forEach((entry, i) => {
+      // Skip locked entries — they keep their current dates
+      if (entry.posts.some(p => p.locked)) return;
       const newDate = allUnique ? entryDates[i] : new Date(entryDates[i].getTime() + i);
       entry.posts.forEach(post => {
         if (post.scheduledDate.getTime() !== newDate.getTime()) onUpdatePost({ ...post, scheduledDate: newDate });
@@ -481,6 +487,7 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
           const post       = groupPosts[0];
           const Icon       = PLATFORM_ICON[post.platform];
           const isCarousel = groupPosts.length > 1;
+          const isLocked   = groupPosts.some(p => p.locked);
           const isSelected = groupPosts.some(p => selected.has(p.id));
           const isDragging = dragId === key;
           const insertBefore = insertBeforeId === key;
@@ -501,8 +508,8 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
 
               {/* Main card */}
               <div
-                draggable={!selecting}
-                onDragStart={selecting ? undefined : e => handleDragStart(e, key, e.currentTarget as HTMLDivElement)}
+                draggable={!selecting && !isLocked}
+                onDragStart={selecting || isLocked ? undefined : e => handleDragStart(e, key, e.currentTarget as HTMLDivElement)}
                 onDragEnd={handleDragEnd}
                 onDragOver={selecting ? undefined : e => handleDragOver(e, key)}
                 onDragLeave={selecting ? undefined : handleDragLeave}
@@ -513,10 +520,10 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
                   background: '#fff',
                   borderRadius: 12,
                   overflow: 'visible',
-                  border: isSelected ? `2px solid ${C.acc}` : isCarousel ? `2px solid #10B981` : `1px solid ${C.line}`,
-                  boxShadow: isSelected ? `0 0 0 3px ${C.acc}33` : isDragging ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
+                  border: isLocked ? `2px solid #F59E0B` : isSelected ? `2px solid ${C.acc}` : isCarousel ? `2px solid #10B981` : `1px solid ${C.line}`,
+                  boxShadow: isLocked ? '0 2px 6px rgba(245,158,11,0.2)' : isSelected ? `0 0 0 3px ${C.acc}33` : isDragging ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
                   display: 'flex', flexDirection: 'column',
-                  cursor: selecting ? 'pointer' : dragId ? 'grabbing' : 'grab',
+                  cursor: selecting ? 'pointer' : isLocked ? 'default' : dragId ? 'grabbing' : 'grab',
                   transition: 'opacity 0.15s',
                   opacity: isDragging ? 0.3 : 1,
                 }}
@@ -530,7 +537,17 @@ export function SchedulingView({ posts, onUpdatePost, folders, onUpdateFolders }
 
                   {/* Image area */}
                   <div style={{ position: 'relative', aspectRatio: '1', background: '#f3f4f6', flexShrink: 0 }}>
-                    {!selecting && <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 2, color: 'rgba(255,255,255,0.85)', lineHeight: 0, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}><GripVertical size={14} /></div>}
+                    {!selecting && !isLocked && <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 2, color: 'rgba(255,255,255,0.85)', lineHeight: 0, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}><GripVertical size={14} /></div>}
+                    {!selecting && (
+                      <button
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); groupPosts.forEach(p => onUpdatePost({ ...p, locked: !isLocked })); }}
+                        title={isLocked ? 'Unlock position' : 'Lock position'}
+                        style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 3, background: isLocked ? '#F59E0B' : 'rgba(0,0,0,0.35)', border: 'none', borderRadius: 6, padding: '3px 5px', lineHeight: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)' }}
+                      >
+                        {isLocked ? <Lock size={11} color="#fff" /> : <Unlock size={11} color="rgba(255,255,255,0.8)" />}
+                      </button>
+                    )}
                     {post.image
                       ? <img src={post.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.t3, fontSize: 12 }}>No image</div>
