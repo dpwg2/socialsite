@@ -829,6 +829,7 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
   const [insertBeforeKey, setInsertBeforeKey] = useState<string | null>(null);
   const [hoverKey, setHoverKey]         = useState<string | null>(null);
   const [editKey, setEditKey]           = useState<string | null>(null);
+  const [zoom, setZoom]                 = useState(100); // percent: 40–100
   const dragNode = useRef<HTMLDivElement | null>(null);
   const lastInsertRef = useRef<string | null>(null);
 
@@ -912,10 +913,23 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '10px 14px', background: '#fff', border: `1px solid ${C.line}`, borderRadius: 10 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#E1306C', flexShrink: 0 }} />
         <span style={{ fontSize: 12, fontWeight: 600, color: C.t2 }}>Instagram Grid Preview</span>
-        <span style={{ fontSize: 12, color: C.t3, marginLeft: 'auto' }}>Drag to reorder · {entries.length} posts</span>
+        <span style={{ fontSize: 12, color: C.t3 }}>Drag to reorder · {entries.length} posts</span>
+        {/* Zoom control */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: C.t3, fontWeight: 500 }}>Zoom</span>
+          <button onClick={() => setZoom(z => Math.max(30, z - 10))} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', cursor: 'pointer', fontSize: 14, lineHeight: 1, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+          <input
+            type="range" min={30} max={100} step={5} value={zoom}
+            onChange={e => setZoom(Number(e.target.value))}
+            style={{ width: 80, accentColor: C.acc, cursor: 'pointer' }}
+          />
+          <button onClick={() => setZoom(z => Math.min(100, z + 10))} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', cursor: 'pointer', fontSize: 14, lineHeight: 1, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+          <span style={{ fontSize: 11, color: C.t3, minWidth: 32, textAlign: 'right' }}>{zoom}%</span>
+        </div>
       </div>
 
-      {/* 3-col grid */}
+      {/* 3-col grid — zoom scales the whole grid while keeping 3 columns */}
+      <div style={{ transformOrigin: 'top left', transform: `scale(${zoom / 100})`, width: `${10000 / zoom}%`, transition: 'transform 0.15s' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3, background: C.lineSub, border: `3px solid ${C.lineSub}`, borderRadius: 4 }}>
         {entries.map(({ key, posts: groupPosts }, idx) => {
           const firstPost   = groupPosts[0];
@@ -1016,6 +1030,7 @@ function InstagramGridPreview({ posts, allPosts, onUpdatePost }: { posts: Post[]
           <div key={`empty-${i}`} style={{ aspectRatio: '1', background: C.bg, opacity: 0.3 }} />
         ))}
       </div>
+      </div>{/* end zoom wrapper */}
 
       {entries.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: C.t3, fontSize: 14 }}>
