@@ -1,7 +1,7 @@
 import { ViewType, BrandProfile } from '../App';
 import {
   CalendarDays, Eye, List, BarChart2, Hash, Settings,
-  Plus, MessageSquare, X, Zap, Instagram, Facebook, Twitter, Linkedin, LayoutGrid, List as ListIcon, ChevronDown, CalendarClock
+  Plus, MessageSquare, X, Zap, Instagram, Facebook, Twitter, Linkedin, LayoutGrid, List as ListIcon, ChevronDown, CalendarClock, ClipboardList
 } from 'lucide-react';
 import { C } from '../utils/ds';
 import type { Post, FeedPlatform, FeedStatusFilter, FeedViewMode } from '../App';
@@ -25,6 +25,7 @@ interface SidebarProps {
 
 const NAV: { view: ViewType; label: string; icon: React.ElementType }[] = [
   { view: 'calendar',   label: 'Calendar',         icon: CalendarDays },
+  { view: 'planned',    label: 'Planned',           icon: ClipboardList },
   { view: 'feed',       label: 'Feed Preview',      icon: Eye },
   { view: 'list',       label: 'Post Queue',        icon: List },
   { view: 'scheduling', label: 'Scheduling',        icon: CalendarClock },

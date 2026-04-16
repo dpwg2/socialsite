@@ -81,6 +81,7 @@ function postToRow(p: Post) {
     carousel_id:    p.carouselId ?? null,
     folder_id:      p.folderId ?? null,
     locked:         p.locked ?? false,
+    plan_order:     p.planOrder ?? null,
   };
 }
 
@@ -103,6 +104,7 @@ function rowToPost(row: Record<string, unknown>): Post {
     carouselId:    (row.carousel_id as string) ?? undefined,
     folderId:      (row.folder_id as string) ?? undefined,
     locked:        (row.locked as boolean) ?? false,
+    planOrder:     (row.plan_order as number) ?? undefined,
   };
 }
 

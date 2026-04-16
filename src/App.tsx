@@ -16,6 +16,7 @@ import { HashtagManager } from './components/HashtagManager';
 import { BrandSettings } from './components/BrandSettings';
 import { AutoDMs } from './components/AutoDMs';
 import { SchedulingView } from './components/SchedulingView';
+import { PlannedView } from './components/PlannedView';
 import { Sidebar } from './components/Sidebar';
 import { Menu, Plus } from 'lucide-react';
 import { Toaster } from 'sonner@2.0.3';
@@ -43,6 +44,8 @@ export interface Post {
   folderId?: string;
   // Lock — prevents drag reorder
   locked?: boolean;
+  // Planned queue order (lower = earlier in queue)
+  planOrder?: number;
 }
 
 export interface Folder {
@@ -68,7 +71,7 @@ export interface BrandProfile {
   avatarGradient: string;
 }
 
-export type ViewType = 'calendar' | 'feed' | 'list' | 'scheduling' | 'analytics' | 'hashtags' | 'settings' | 'autodms';
+export type ViewType = 'calendar' | 'feed' | 'list' | 'scheduling' | 'planned' | 'analytics' | 'hashtags' | 'settings' | 'autodms';
 
 export type FeedPlatform = 'instagram' | 'twitter' | 'facebook' | 'linkedin';
 export type FeedStatusFilter = 'all' | 'scheduled' | 'draft' | 'posted';
@@ -79,6 +82,7 @@ const VIEW_LABEL: Record<ViewType, string> = {
   feed:       'Feed Preview',
   list:       'Post Queue',
   scheduling: 'Scheduling',
+  planned:    'Planned',
   analytics:  'Analytics',
   hashtags:   'Hashtag Manager',
   settings:   'Brand Settings',
@@ -264,6 +268,7 @@ export default function App() {
           {view === 'feed'      && <FeedPreview posts={posts} onEditPost={openEdit} onDeletePost={delPost} onUpdatePost={updPost} brandProfile={brand} feedPlatform={feedPlatform} setFeedPlatform={setFeedPlatform} feedStatus={feedStatus} setFeedStatus={setFeedStatus} feedViewMode={feedViewMode} setFeedViewMode={setFeedViewMode} />}
           {view === 'list'      && <ScheduledPosts posts={posts} onEditPost={openEdit} onDeletePost={delPost} onDuplicatePost={dupPost} />}
           {view === 'scheduling' && <SchedulingView posts={posts} onUpdatePost={updPost} folders={folders} onUpdateFolders={setFolders} />}
+          {view === 'planned'    && <PlannedView posts={posts} onUpdatePost={updPost} onEditPost={openEdit} onDeletePost={delPost} />}
           {view === 'analytics' && <Analytics posts={posts} />}
           {view === 'hashtags'  && <HashtagManager hashtagGroups={groups} onAddGroup={g => setGroups(p => [...p, { ...g, id: Date.now().toString() }])} onUpdateGroup={g => setGroups(p => p.map(x => x.id === g.id ? g : x))} onDeleteGroup={id => setGroups(p => p.filter(g => g.id !== id))} />}
           {view === 'settings'  && <BrandSettings brandProfile={brand} onUpdateBrandProfile={setBrand} />}
