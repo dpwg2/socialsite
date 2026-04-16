@@ -194,13 +194,13 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                    {datePickerId === post.id ? (
+                    {post.locked && (datePickerId === post.id ? (
                       <input autoFocus type="datetime-local" defaultValue={toLocalInputValue(post.scheduledDate)} onChange={e => { if (!e.target.value) return; onUpdatePost({ ...post, scheduledDate: new Date(e.target.value), status: 'scheduled' }); }} onBlur={() => setDatePickerId(null)} style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.acc}`, outline: 'none', color: C.t1, background: '#fff' }} />
                     ) : (
-                      <button onClick={() => setDatePickerId(post.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: `1px solid ${C.line}`, background: '#fff', color: C.t2, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                      <button onClick={() => setDatePickerId(post.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, border: `1px solid #F59E0B`, background: '#FEF3C7', color: '#92400E', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
                         <Calendar size={12} />{hasDate ? 'Change date' : 'Schedule'}<ArrowRight size={11} />
                       </button>
-                    )}
+                    ))}
                     <button onClick={() => onUpdatePost({ ...post, locked: !post.locked })} style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${post.locked ? '#F59E0B' : C.line}`, background: post.locked ? '#FEF3C7' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: post.locked ? '#92400E' : C.t3 }}>
                       {post.locked ? <Lock size={13} /> : <Unlock size={13} />}
                     </button>
@@ -290,10 +290,12 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
                             {post.locked ? <Lock size={9} color="#fff" /> : <Unlock size={9} color="#fff" />}
                             {post.locked ? 'Unlock' : 'Lock'}
                           </button>
-                          {/* Schedule */}
-                          <button onClick={e => { e.stopPropagation(); setDatePickerId(post.id); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 5, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', color: '#fff', fontSize: 9, fontWeight: 600 }}>
-                            <Calendar size={9} color="#fff" /> Date
-                          </button>
+                          {/* Schedule — only for locked posts */}
+                          {post.locked && (
+                            <button onClick={e => { e.stopPropagation(); setDatePickerId(post.id); }} style={{ background: '#F59E0B', border: 'none', borderRadius: 5, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', color: '#fff', fontSize: 9, fontWeight: 600 }}>
+                              <Calendar size={9} color="#fff" /> Date
+                            </button>
+                          )}
                           {/* Edit */}
                           <button onClick={e => { e.stopPropagation(); onEditPost(post); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 5, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', color: '#fff', fontSize: 9, fontWeight: 600 }}>
                             <Pencil size={9} color="#fff" />
