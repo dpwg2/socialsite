@@ -95,7 +95,7 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
     const resolvedId = target.startsWith('after:') ? target.slice(6) : target;
     if (resolvedId === dragId) { endDrag(); return; }
     const draggedEntry = entries.find(e => e.key === dragId);
-    if (!draggedEntry || entryLocked(draggedEntry)) { endDrag(); return; }
+    if (!draggedEntry) { endDrag(); return; }
     const remaining = entries.filter(e => e.key !== dragId);
     const targetIdx = remaining.findIndex(e => e.key === resolvedId);
     if (targetIdx === -1) { endDrag(); return; }
@@ -203,20 +203,20 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
               <div key={entry.key}>
                 {showAbove && <div style={{ height: 3, background: C.acc, borderRadius: 2, margin: '2px 0', boxShadow: `0 0 8px ${C.acc}88` }} />}
                 <div
-                  draggable={!locked}
-                  onDragStart={locked ? undefined : e => startListDrag(e, entry.key)}
+                  draggable
+                  onDragStart={e => startListDrag(e, entry.key)}
                   onDragEnd={endDrag}
                   onDragOver={e => handleListDragOver(e, entry.key)}
                   onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setInsertAt(null); }}
                   onDrop={handleListDrop}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', marginBottom: 6, background: '#fff', borderRadius: 12, border: locked ? `2px solid #F59E0B` : `1px solid ${C.line}`, boxShadow: isDragging ? 'none' : '0 1px 4px rgba(0,0,0,0.06)', opacity: isDragging ? 0.3 : 1, cursor: locked ? 'default' : dragId ? 'grabbing' : 'grab', transition: 'opacity 0.15s' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', marginBottom: 6, background: '#fff', borderRadius: 12, border: locked ? `2px solid #F59E0B` : `1px solid ${C.line}`, boxShadow: isDragging ? 'none' : '0 1px 4px rgba(0,0,0,0.06)', opacity: isDragging ? 0.3 : 1, cursor: dragId ? 'grabbing' : 'grab', transition: 'opacity 0.15s' }}
                 >
                   {/* Slot number */}
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: locked ? '#FEF3C7' : C.bg, border: `1px solid ${locked ? '#F59E0B' : C.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: locked ? '#92400E' : C.t2, flexShrink: 0 }}>
                     {idx + 1}
                   </div>
 
-                  {locked ? <Lock size={13} color="#F59E0B" style={{ flexShrink: 0 }} /> : <GripVertical size={15} color={C.t3} style={{ flexShrink: 0 }} />}
+                  <GripVertical size={15} color={locked ? '#F59E0B' : C.t3} style={{ flexShrink: 0 }} />
 
                   {/* Thumbnail(s) */}
                   {isCarousel ? (
@@ -306,15 +306,15 @@ export function PlannedView({ posts, onUpdatePost, onEditPost, onDeletePost }: P
                   {insB && <div style={{ position: 'absolute', left: -3, top: 0, bottom: 0, width: 4, background: C.acc, zIndex: 20, boxShadow: `0 0 8px ${C.acc}` }} />}
                   {insA && <div style={{ position: 'absolute', right: -3, top: 0, bottom: 0, width: 4, background: C.acc, zIndex: 20, boxShadow: `0 0 8px ${C.acc}` }} />}
                   <div
-                    draggable={!locked}
-                    onDragStart={locked ? undefined : e => startGridDrag(e, entry.key)}
+                    draggable
+                    onDragStart={e => startGridDrag(e, entry.key)}
                     onDragEnd={endDrag}
                     onDragOver={e => handleGridDragOver(e, entry.key)}
                     onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setInsertAt(null); }}
                     onDrop={e => handleGridDrop(e, entry.key)}
                     onMouseEnter={() => setHoverKey(entry.key)}
                     onMouseLeave={() => setHoverKey(null)}
-                    style={{ aspectRatio: '1', overflow: 'hidden', position: 'relative', cursor: locked ? 'default' : dragId ? 'grabbing' : 'grab', background: C.bg, opacity: isDragging ? 0.25 : 1, transition: 'opacity 0.15s', outline: locked ? '2px solid #F59E0B' : 'none', outlineOffset: '-2px' }}
+                    style={{ aspectRatio: '1', overflow: 'hidden', position: 'relative', cursor: dragId ? 'grabbing' : 'grab', background: C.bg, opacity: isDragging ? 0.25 : 1, transition: 'opacity 0.15s', outline: locked ? '2px solid #F59E0B' : 'none', outlineOffset: '-2px' }}
                   >
                     {post.image
                       ? <img src={post.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
